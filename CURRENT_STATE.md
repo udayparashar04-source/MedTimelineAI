@@ -1,81 +1,75 @@
 # MedTimelineAI — Current State
 
-**As of:** 2026-09-03 (foundation documentation pass)
+**As of:** 2026-09-04 (Milestone 1 — deterministic PDF parser core)
 
 This file describes what **actually exists** in the repository. It does not describe planned features as if they were done.
 
-## Inspection findings (before foundation work)
+## Summary
 
-| Item | Reality |
-|------|---------|
-| Git | Initialized; branch `main`; tracks `origin/main` |
-| History | Single commit: `619f0c1` — “Initial commit” |
-| Application code | **None** |
-| Frontend | **Not present** |
-| Backend | **Not present** |
-| Database config | **Not present** |
-| Parser | **Not present** |
-| Dependencies | **None** (no `package.json`, `requirements.txt`, lockfiles, or virtualenvs) |
-| Tests | **None** |
-| CI | **None** |
+The repo has foundation docs plus a **working, tested deterministic lab PDF parser** under `backend/app/services/parser/`. There is still **no** FastAPI app, frontend, database, OCR, or AI extraction.
 
-### Files present on inspection
+## What exists
 
-Only tracked project content:
-
-- `README.md` — single line: `# MedTimelineAI`
-
-No other project source or config files existed outside `.git/`.
-
-## What exists after this foundation pass
-
-### Documentation (created)
+### Documentation
 
 | File | Purpose |
 |------|---------|
-| `PROJECT_SPEC.md` | Product goals, constraints, non-negotiable data rules |
-| `ARCHITECTURE.md` | Target system shape and folder responsibilities |
+| `README.md` | Title only: `# MedTimelineAI` |
+| `PROJECT_SPEC.md` | Product goals and constraints |
+| `ARCHITECTURE.md` | Target system shape |
 | `CURRENT_STATE.md` | This inventory |
-| `TASKS.md` | Milestone plan (not implemented) |
+| `TASKS.md` | Milestone plan |
 
-### Directory scaffold (created, empty)
+### Backend — parser (implemented)
 
-Intended layout only—**no application implementation**:
+| Path | Role |
+|------|------|
+| `backend/pyproject.toml` | Package metadata, pytest config, `pypdf` dependency |
+| `backend/requirements.txt` | `pypdf`, `pytest` |
+| `backend/app/services/parser/` | Framework-independent parser package |
+| `backend/tests/` | Pytest suite + PDF fixtures |
 
-```
-frontend/
-backend/app/api/
-backend/app/core/
-backend/app/models/
-backend/app/services/parser/
-backend/app/db/
-backend/tests/fixtures/
-```
+**Parser capabilities (verified by tests):**
 
-Each reserved directory contains a `.gitkeep` so the structure is tracked by Git.
+- Digital PDF text extraction via **pypdf** (no OCR)
+- Report/collection **date detection**
+- Maintainable **alias → canonical test name** catalog
+- Extraction of **value + unit** with source page/line metadata
+- Missing tests **omitted** (never fabricated as `0`)
+- Public API: `parse_pdf`, `parse_pdf_bytes`, `parse_text_pages` → `ParsedReport`
+- Parser version stamp: `PARSER_VERSION` (`0.1.0`)
 
-### Unchanged
+### Directory scaffold (still empty placeholders)
 
-- `README.md` — still `# MedTimelineAI` only (not expanded in this pass)
+- `frontend/` — reserved only
+- `backend/app/api/`, `core/`, `models/`, `db/` — reserved only (`.gitkeep`)
 
 ## Explicitly not done yet
 
-- React + Vite scaffolding
-- FastAPI app entrypoint
-- PDF parser implementation
-- PostgreSQL schema or connection
-- API routes
-- UI screens
-- Dependency installation
-- Sample/fake medical data
-- OCR or AI extraction
+- FastAPI / HTTP API
+- React + Vite frontend
+- PostgreSQL
+- Upload orchestration
+- Timeline aggregation / UI
+- Authentication
+- OCR
+- AI extraction
+- Deployment
 
-## Health check notes
+## How to run parser tests
 
-Safe checks for this stage:
+From `backend/`:
 
-- Repository is a valid Git working tree.
-- Documentation files are present and readable at the repo root.
-- Scaffold directories exist as listed above.
+```bash
+python -m pip install -r requirements.txt
+python -m pytest -q
+```
 
-There is nothing to build, lint, or test as an application until later milestones add real code.
+**Last test run:** 26 passed.
+
+## Dependencies present
+
+- Runtime: `pypdf`
+- Dev/test: `pytest`
+
+No Node packages, no FastAPI, no database drivers.

@@ -1,35 +1,52 @@
 # MedTimelineAI — Tasks (Milestone Plan)
 
-Implementation of these milestones has **not** started. This file is the ordered plan only.
-
 ---
 
-## Milestone 0 — Foundation (this pass)
+## Milestone 0 — Foundation
 
-**Status:** Documentation + empty architecture folders only.
+**Status:** Complete
 
 - [x] Inspect existing repository contents
 - [x] Write `PROJECT_SPEC.md`, `ARCHITECTURE.md`, `CURRENT_STATE.md`, `TASKS.md`
 - [x] Reserve `frontend/` and `backend/` directory structure
-- [ ] *(Stop here until the next milestone is explicitly started)*
 
 ---
 
-## Milestone 1 — Backend skeleton (FastAPI)
+## Milestone 1 — Deterministic PDF parser core
 
-**Goal:** Runnable API shell with health check; no parser yet.
+**Status:** Complete (2026-09-04)
 
-- [ ] Create Python project layout under `backend/` (`pyproject.toml` or `requirements.txt`)
+**Goal:** Framework-independent, testable parser for digital lab PDFs (no AI, no OCR, no API/UI).
+
+- [x] Create Python package layout under `backend/` with minimal deps (`pypdf`, `pytest`)
+- [x] Implement page-aware PDF text extraction (`pypdf`)
+- [x] Detect report/collection date
+- [x] Maintainable alias catalog → canonical test names
+- [x] Extract numeric/text values and units without inventing data
+- [x] Omit missing tests (never coerce to `0`)
+- [x] Preserve source page / line metadata + confidence/method fields
+- [x] Public callables: `parse_pdf`, `parse_pdf_bytes`, `parse_text_pages`
+- [x] Pytest coverage: success, dates, aliases, missingness, malformed/empty, units, multi-test
+- [x] Small PDF fixtures under `backend/tests/fixtures/`
+
+**Exit criteria:** Pytest green; parser callable from Python; missing ≠ 0. **Met (26 passed).**
+
+---
+
+## Milestone 2 — Backend skeleton (FastAPI)
+
+**Goal:** Runnable API shell with health check; wire parser later.
+
 - [ ] Add FastAPI app entrypoint and `GET /health`
-- [ ] Add minimal config module under `backend/app/core/`
+- [ ] Minimal config under `backend/app/core/`
 - [ ] Document how to run the API locally
-- [ ] Add a smoke test for `/health`
+- [ ] Smoke test for `/health`
 
 **Exit criteria:** `uvicorn` (or equivalent) serves `/health` successfully.
 
 ---
 
-## Milestone 2 — Frontend skeleton (React + Vite)
+## Milestone 3 — Frontend skeleton (React + Vite)
 
 **Goal:** Empty but real UI shell that can talk to the API later.
 
@@ -42,49 +59,22 @@ Implementation of these milestones has **not** started. This file is the ordered
 
 ---
 
-## Milestone 3 — Domain models & missingness rules
+## Milestone 4 — Domain models & API contracts
 
-**Goal:** Shared contracts that encode product rules before parsing.
+**Goal:** Shared contracts that encode product rules for the API layer.
 
-- [ ] Define report / observation / timeline types (Pydantic or equivalent)
+- [ ] Align API schemas with `ParsedReport` / `ExtractedResult`
 - [ ] Encode missing values as `null`/absent—**never** default to `0`
-- [ ] Include fields for `source_report_id` and `source_page` on observations
+- [ ] Include `source_report_id` (when available) alongside page/line
 - [ ] Document JSON examples for missing vs present values
 
-**Exit criteria:** Models + unit tests proving missing ≠ `0`.
+**Exit criteria:** Models + tests proving missing ≠ `0` at the API boundary.
 
 ---
 
-## Milestone 4 — Deterministic PDF text extraction (no OCR, no AI)
+## Milestone 5 — Upload & parse orchestration
 
-**Goal:** Reliable text pull from digital PDFs only.
-
-- [ ] Choose and pin a PDF text-extraction library
-- [ ] Implement page-aware text extraction API inside `services/parser/`
-- [ ] Fixture folder for fixed PDFs/text snapshots (`backend/tests/fixtures/`)
-- [ ] Tests: same file → same page text
-
-**Exit criteria:** Deterministic text extraction with failing tests for regressions.
-
----
-
-## Milestone 5 — Deterministic lab result parser
-
-**Goal:** Map PDF text to structured tests without LLMs.
-
-- [ ] Rule/structure-based parsing of test name, value, unit, date
-- [ ] Explicit missing/unparsed handling (sentinel compatible with `"—"` in UI)
-- [ ] Attach page (and later report id) to each extracted value
-- [ ] Parser version stamp on output
-- [ ] Comprehensive fixture-based tests
-
-**Exit criteria:** Known fixtures parse stably; absent tests never become `0`.
-
----
-
-## Milestone 6 — Upload & parse orchestration
-
-**Goal:** End-to-end “file in → structured results out” without DB permanence yet (or with local file store).
+**Goal:** End-to-end “file in → structured results out” without DB permanence yet.
 
 - [ ] `POST` upload endpoint accepting PDF
 - [ ] Store file on disk (or object store abstraction)
@@ -95,7 +85,7 @@ Implementation of these milestones has **not** started. This file is the ordered
 
 ---
 
-## Milestone 7 — PostgreSQL persistence
+## Milestone 6 — PostgreSQL persistence
 
 **Goal:** Durable reports and observations.
 
@@ -108,7 +98,7 @@ Implementation of these milestones has **not** started. This file is the ordered
 
 ---
 
-## Milestone 8 — Chronological timeline API
+## Milestone 7 — Chronological timeline API
 
 **Goal:** Backend aggregation for the product’s core view.
 
@@ -120,7 +110,7 @@ Implementation of these milestones has **not** started. This file is the ordered
 
 ---
 
-## Milestone 9 — Timeline UI (polished, useful)
+## Milestone 8 — Timeline UI (polished, useful)
 
 **Goal:** Modern frontend for the chronological view—not a bare spreadsheet.
 
@@ -134,7 +124,7 @@ Implementation of these milestones has **not** started. This file is the ordered
 
 ---
 
-## Milestone 10 — Hardening
+## Milestone 9 — Hardening
 
 **Goal:** Production-minded quality without scope creep into AI/OCR.
 
