@@ -33,16 +33,24 @@
 
 ---
 
-## Milestone 2 — Backend skeleton (FastAPI)
+## Milestone 2 — FastAPI backend foundation (+ parser integration)
 
-**Goal:** Runnable API shell with health check; wire parser later.
+**Status:** Complete (2026-09-04)
 
-- [ ] Add FastAPI app entrypoint and `GET /health`
-- [ ] Minimal config under `backend/app/core/`
-- [ ] Document how to run the API locally
-- [ ] Smoke test for `/health`
+**Goal:** Runnable FastAPI app with health check, CORS, and PDF upload that returns deterministic parser JSON (no DB/auth/UI).
 
-**Exit criteria:** `uvicorn` (or equivalent) serves `/health` successfully.
+- [x] Add FastAPI app entrypoint (`backend/app/main.py`)
+- [x] API routing structure under `backend/app/api/`
+- [x] Pydantic schemas mirroring parser output
+- [x] Report processing service layer (validation + `parse_pdf_bytes`)
+- [x] `GET /health`
+- [x] `POST /reports/parse` (PDF upload → structured JSON)
+- [x] CORS for future React/Vite frontend
+- [x] API tests: health, valid PDF, malformed, non-PDF, result fidelity, missing ≠ 0
+- [x] Keep parser independently testable (unchanged)
+- [x] Document local run (`uvicorn`) in `CURRENT_STATE.md`
+
+**Exit criteria:** Health + parse endpoints work; full backend pytest green. **Met (33 passed).**
 
 ---
 
@@ -63,25 +71,27 @@
 
 **Goal:** Shared contracts that encode product rules for the API layer.
 
-- [ ] Align API schemas with `ParsedReport` / `ExtractedResult`
+- [ ] Align/extend API schemas as persistence arrives (`source_report_id`, etc.)
 - [ ] Encode missing values as `null`/absent—**never** default to `0`
-- [ ] Include `source_report_id` (when available) alongside page/line
 - [ ] Document JSON examples for missing vs present values
 
 **Exit criteria:** Models + tests proving missing ≠ `0` at the API boundary.
 
+**Note:** Basic `ParsedReport` JSON schemas already exist from Milestone 2.
+
 ---
 
-## Milestone 5 — Upload & parse orchestration
+## Milestone 5 — Upload persistence & orchestration
 
-**Goal:** End-to-end “file in → structured results out” without DB permanence yet.
+**Goal:** Durable file handling around the existing parse endpoint.
 
-- [ ] `POST` upload endpoint accepting PDF
-- [ ] Store file on disk (or object store abstraction)
-- [ ] Run parser pipeline; return structured JSON
-- [ ] Error paths for non-PDF / non-text PDFs (clear messages; no silent OCR)
+- [ ] Store uploaded PDF on disk (or object store abstraction)
+- [ ] Associate stored file metadata with parse runs
+- [ ] Keep clear error paths for non-PDF / non-text PDFs (no silent OCR)
 
-**Exit criteria:** Upload a text-layer PDF and receive deterministic structured JSON.
+**Exit criteria:** Upload is parseable and retrievable after process restart (without full DB if still deferred).
+
+**Note:** In-memory parse-via-upload (`POST /reports/parse`) already shipped in Milestone 2.
 
 ---
 

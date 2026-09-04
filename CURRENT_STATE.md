@@ -1,12 +1,12 @@
 # MedTimelineAI — Current State
 
-**As of:** 2026-09-04 (Milestone 1 — deterministic PDF parser core)
+**As of:** 2026-09-04 (Milestone 2 — FastAPI backend foundation)
 
 This file describes what **actually exists** in the repository. It does not describe planned features as if they were done.
 
 ## Summary
 
-The repo has foundation docs plus a **working, tested deterministic lab PDF parser** under `backend/app/services/parser/`. There is still **no** FastAPI app, frontend, database, OCR, or AI extraction.
+The repo has foundation docs, a **deterministic lab PDF parser**, and a **FastAPI API** that accepts PDF uploads and returns parser JSON. There is still **no** frontend, database, auth, OCR, or AI extraction.
 
 ## What exists
 
@@ -20,56 +20,64 @@ The repo has foundation docs plus a **working, tested deterministic lab PDF pars
 | `CURRENT_STATE.md` | This inventory |
 | `TASKS.md` | Milestone plan |
 
-### Backend — parser (implemented)
+### Backend — parser (Milestone 1)
 
 | Path | Role |
 |------|------|
-| `backend/pyproject.toml` | Package metadata, pytest config, `pypdf` dependency |
-| `backend/requirements.txt` | `pypdf`, `pytest` |
-| `backend/app/services/parser/` | Framework-independent parser package |
-| `backend/tests/` | Pytest suite + PDF fixtures |
+| `backend/app/services/parser/` | Framework-independent deterministic parser |
+| `backend/tests/fixtures/` | PDF fixtures |
+| Parser tests | Still independently runnable |
 
-**Parser capabilities (verified by tests):**
+### Backend — FastAPI (Milestone 2)
 
-- Digital PDF text extraction via **pypdf** (no OCR)
-- Report/collection **date detection**
-- Maintainable **alias → canonical test name** catalog
-- Extraction of **value + unit** with source page/line metadata
-- Missing tests **omitted** (never fabricated as `0`)
-- Public API: `parse_pdf`, `parse_pdf_bytes`, `parse_text_pages` → `ParsedReport`
-- Parser version stamp: `PARSER_VERSION` (`0.1.0`)
+| Path | Role |
+|------|------|
+| `backend/app/main.py` | FastAPI app factory + CORS |
+| `backend/app/core/config.py` | Settings (CORS origins, upload size) |
+| `backend/app/api/` | Routers (`/health`, `/reports/parse`) |
+| `backend/app/models/schemas.py` | Pydantic response schemas |
+| `backend/app/services/reports.py` | Upload validation + parser orchestration |
 
-### Directory scaffold (still empty placeholders)
+**API endpoints:**
+
+| Method | Path | Behavior |
+|--------|------|----------|
+| `GET` | `/health` | Liveness JSON |
+| `POST` | `/reports/parse` | Multipart PDF upload → `ParsedReport` JSON |
+
+**API rules in force:**
+
+- PDF validation (extension/content-type + `%PDF` magic)
+- Existing parser invoked via `parse_pdf_bytes` (values not altered)
+- Missing tests omitted from `results` (never filled with `0`)
+- CORS enabled for local Vite origins (`http://localhost:5173`, `http://127.0.0.1:5173`)
+
+### Still empty / deferred
 
 - `frontend/` — reserved only
-- `backend/app/api/`, `core/`, `models/`, `db/` — reserved only (`.gitkeep`)
+- `backend/app/db/` — reserved only
+- No authentication
+- No PostgreSQL
+- No timeline UI
+- No OCR / AI
 
-## Explicitly not done yet
-
-- FastAPI / HTTP API
-- React + Vite frontend
-- PostgreSQL
-- Upload orchestration
-- Timeline aggregation / UI
-- Authentication
-- OCR
-- AI extraction
-- Deployment
-
-## How to run parser tests
+## How to run
 
 From `backend/`:
 
 ```bash
 python -m pip install -r requirements.txt
 python -m pytest -q
+uvicorn app.main:app --reload --app-dir .
 ```
 
-**Last test run:** 26 passed.
+API docs (when server is running): `http://127.0.0.1:8000/docs`
 
-## Dependencies present
+## Test status
 
-- Runtime: `pypdf`
-- Dev/test: `pytest`
+**Last run:** 33 passed (26 parser + 7 API), 2 dependency deprecation warnings unrelated to app logic.
 
-No Node packages, no FastAPI, no database drivers.
+## Dependencies
+
+- Runtime: `pypdf`, `fastapi`, `uvicorn`, `python-multipart`
+- Dev/test: `pytest`, `httpx`
