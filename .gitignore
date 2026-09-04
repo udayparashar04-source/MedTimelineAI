@@ -6,3 +6,6 @@
 venv/
 .env
 *.pdf.bak
+storage/
+*.db
+medtimeline_dev.db

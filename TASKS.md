@@ -16,20 +16,7 @@
 
 **Status:** Complete (2026-09-04)
 
-**Goal:** Framework-independent, testable parser for digital lab PDFs (no AI, no OCR, no API/UI).
-
-- [x] Create Python package layout under `backend/` with minimal deps (`pypdf`, `pytest`)
-- [x] Implement page-aware PDF text extraction (`pypdf`)
-- [x] Detect report/collection date
-- [x] Maintainable alias catalog → canonical test names
-- [x] Extract numeric/text values and units without inventing data
-- [x] Omit missing tests (never coerce to `0`)
-- [x] Preserve source page / line metadata + confidence/method fields
-- [x] Public callables: `parse_pdf`, `parse_pdf_bytes`, `parse_text_pages`
-- [x] Pytest coverage: success, dates, aliases, missingness, malformed/empty, units, multi-test
-- [x] Small PDF fixtures under `backend/tests/fixtures/`
-
-**Exit criteria:** Pytest green; parser callable from Python; missing ≠ 0. **Met (26 passed).**
+- [x] Deterministic parser + fixtures + pytest (26 parser tests)
 
 ---
 
@@ -37,26 +24,34 @@
 
 **Status:** Complete (2026-09-04)
 
-**Goal:** Runnable FastAPI app with health check, CORS, and PDF upload that returns deterministic parser JSON (no DB/auth/UI).
-
-- [x] Add FastAPI app entrypoint (`backend/app/main.py`)
-- [x] API routing structure under `backend/app/api/`
-- [x] Pydantic schemas mirroring parser output
-- [x] Report processing service layer (validation + `parse_pdf_bytes`)
-- [x] `GET /health`
-- [x] `POST /reports/parse` (PDF upload → structured JSON)
-- [x] CORS for future React/Vite frontend
-- [x] API tests: health, valid PDF, malformed, non-PDF, result fidelity, missing ≠ 0
-- [x] Keep parser independently testable (unchanged)
-- [x] Document local run (`uvicorn`) in `CURRENT_STATE.md`
-
-**Exit criteria:** Health + parse endpoints work; full backend pytest green. **Met (33 passed).**
+- [x] FastAPI app, `/health`, `/reports/parse`, CORS, API tests
 
 ---
 
-## Milestone 3 — Frontend skeleton (React + Vite)
+## Milestone 3 — PostgreSQL-compatible persistence
 
-**Goal:** Empty but real UI shell that can talk to the API later.
+**Status:** Complete (2026-09-04)
+
+**Goal:** Persist patients, reports, and extracted results in a real DB; store PDF files outside the database.
+
+- [x] SQLAlchemy 2.x + `DATABASE_URL` configuration
+- [x] Models: `patients`, `reports`, `extracted_results`, `tests`
+- [x] Report status enum values: pending/processing/parsed/needs_review/needs_ocr/failed
+- [x] Alembic migration foundation (`0001_initial`)
+- [x] Patient API: create / list / get
+- [x] `POST /reports/parse` requires `patient_id`, persists report + results
+- [x] Local filesystem PDF storage (not in PostgreSQL)
+- [x] Validation + transaction rollback on failure
+- [x] Isolated SQLite test DB (no production DB required)
+- [x] Full suite green (41 passed)
+
+**Exit criteria:** Reports and extracted results survive via DB; PDFs on disk; tests pass. **Met.**
+
+---
+
+## Milestone 4 — Frontend skeleton (React + Vite)
+
+**Goal:** Empty but real UI shell that can talk to the API.
 
 - [ ] Scaffold React + Vite in `frontend/`
 - [ ] Basic app shell / routing placeholder (no fake medical tables)
@@ -67,44 +62,24 @@
 
 ---
 
-## Milestone 4 — Domain models & API contracts
+## Milestone 5 — Domain contracts & retrieval APIs
 
-**Goal:** Shared contracts that encode product rules for the API layer.
+**Goal:** Extend read APIs for stored reports/results.
 
-- [ ] Align/extend API schemas as persistence arrives (`source_report_id`, etc.)
-- [ ] Encode missing values as `null`/absent—**never** default to `0`
+- [ ] List/get reports for a patient
+- [ ] Keep missing values absent—**never** default to `0`
 - [ ] Document JSON examples for missing vs present values
 
-**Exit criteria:** Models + tests proving missing ≠ `0` at the API boundary.
-
-**Note:** Basic `ParsedReport` JSON schemas already exist from Milestone 2.
+**Exit criteria:** Clients can reload persisted parse data without re-uploading.
 
 ---
 
-## Milestone 5 — Upload persistence & orchestration
+## Milestone 6 — Object storage readiness & hardening of uploads
 
-**Goal:** Durable file handling around the existing parse endpoint.
+**Goal:** Keep storage swappable and safer.
 
-- [ ] Store uploaded PDF on disk (or object store abstraction)
-- [ ] Associate stored file metadata with parse runs
-- [ ] Keep clear error paths for non-PDF / non-text PDFs (no silent OCR)
-
-**Exit criteria:** Upload is parseable and retrievable after process restart (without full DB if still deferred).
-
-**Note:** In-memory parse-via-upload (`POST /reports/parse`) already shipped in Milestone 2.
-
----
-
-## Milestone 6 — PostgreSQL persistence
-
-**Goal:** Durable reports and observations.
-
-- [ ] Add PostgreSQL connection + migrations
-- [ ] Tables for reports, parse runs, observations (NULL for missing—not `0`)
-- [ ] Persist source report + page per observation
-- [ ] Query endpoints for reports and timeline aggregation
-
-**Exit criteria:** Restart API; previously parsed data still available.
+- [ ] Tighten file handling / retention
+- [ ] Optional S3-compatible backend behind the storage interface
 
 ---
 
@@ -116,8 +91,6 @@
 - [ ] Align tests across dates; missing slots remain null/`"—"`-ready
 - [ ] Include source metadata in responses
 
-**Exit criteria:** `GET /timeline` (or equivalent) returns chronologically correct, gap-safe data.
-
 ---
 
 ## Milestone 8 — Timeline UI (polished, useful)
@@ -125,32 +98,18 @@
 **Goal:** Modern frontend for the chronological view—not a bare spreadsheet.
 
 - [ ] Upload flow wired to backend
-- [ ] Chronological visualization / comparison with clear hierarchy
-- [ ] Missing values rendered as `"—"`
-- [ ] Source report/page inspection for a selected value
-- [ ] Responsive layout; no clinical advice copy
-
-**Exit criteria:** Real upload → parse → readable timeline with traceability.
+- [ ] Chronological visualization with `"—"` for missing values
+- [ ] Source report/page inspection
 
 ---
 
 ## Milestone 9 — Hardening
 
-**Goal:** Production-minded quality without scope creep into AI/OCR.
-
-- [ ] Parser regression suite expansion
-- [ ] API validation and safer file handling
-- [ ] Basic logging/observability
-- [ ] README with accurate run instructions
-- [ ] Update `CURRENT_STATE.md` to match reality
-
-**Exit criteria:** Documented local run path; tests green; state docs accurate.
+- [ ] Logging/observability, README runbook, regression expansion
 
 ---
 
 ## Explicitly deferred (post-MVP)
-
-Do **not** schedule into early milestones:
 
 - OCR for scanned PDFs
 - AI / LLM extraction

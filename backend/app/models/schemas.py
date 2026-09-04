@@ -1,11 +1,12 @@
-"""Pydantic API schemas mirroring the deterministic parser output.
+"""Pydantic API schemas (separate from SQLAlchemy models).
 
-These schemas serialize parser results only — they never invent medical values
+These schemas serialize API data only — they never invent medical values
 or fill missing tests with zeros.
 """
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -40,6 +41,8 @@ class ExtractedResultSchema(BaseModel):
     confidence: float
     method: str
     source: SourceRefSchema
+    test_id: Optional[int] = None
+    id: Optional[int] = None
 
     @classmethod
     def from_parser(cls, result: ExtractedResult) -> ExtractedResultSchema:
@@ -81,6 +84,44 @@ class ParsedReportSchema(BaseModel):
             pages_text=list(report.pages_text),
             warnings=list(report.warnings),
         )
+
+
+class PersistedReportSchema(BaseModel):
+    """Parse response after a report has been stored for a patient."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    report_id: int
+    patient_id: int
+    status: str
+    original_filename: Optional[str] = None
+    storage_key: Optional[str] = None
+    parser_version: str
+    report_date: Optional[str] = None
+    report_date_raw: Optional[str] = None
+    report_date_confidence: Optional[float] = None
+    report_date_method: Optional[str] = None
+    results: list[ExtractedResultSchema] = Field(default_factory=list)
+    pages_text: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    error_message: Optional[str] = None
+
+
+class PatientCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    display_name: str = Field(min_length=1, max_length=255)
+    notes: Optional[str] = None
+
+
+class PatientResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
+
+    id: int
+    display_name: str
+    notes: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
 
 
 class HealthResponse(BaseModel):

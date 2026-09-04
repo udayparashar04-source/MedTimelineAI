@@ -5,6 +5,9 @@ from .schemas import (
     ExtractedResultSchema,
     HealthResponse,
     ParsedReportSchema,
+    PatientCreate,
+    PatientResponse,
+    PersistedReportSchema,
     SourceRefSchema,
 )
 
@@ -13,5 +16,8 @@ __all__ = [
     "ExtractedResultSchema",
     "HealthResponse",
     "ParsedReportSchema",
+    "PatientCreate",
+    "PatientResponse",
+    "PersistedReportSchema",
     "SourceRefSchema",
 ]

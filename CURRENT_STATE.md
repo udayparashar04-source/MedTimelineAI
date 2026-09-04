@@ -1,83 +1,85 @@
 # MedTimelineAI — Current State
 
-**As of:** 2026-09-04 (Milestone 2 — FastAPI backend foundation)
+**As of:** 2026-09-04 (Milestone 3 — PostgreSQL-compatible persistence)
 
 This file describes what **actually exists** in the repository. It does not describe planned features as if they were done.
 
 ## Summary
 
-The repo has foundation docs, a **deterministic lab PDF parser**, and a **FastAPI API** that accepts PDF uploads and returns parser JSON. There is still **no** frontend, database, auth, OCR, or AI extraction.
+The repo has foundation docs, a deterministic lab PDF parser, a FastAPI API, and **real persistence** for patients, reports, and extracted results (SQLAlchemy 2.x + Alembic). PDF binaries are stored on local disk, not in the database. There is still **no** frontend, auth, OCR, AI, or timeline UI.
 
 ## What exists
 
-### Documentation
-
-| File | Purpose |
-|------|---------|
-| `README.md` | Title only: `# MedTimelineAI` |
-| `PROJECT_SPEC.md` | Product goals and constraints |
-| `ARCHITECTURE.md` | Target system shape |
-| `CURRENT_STATE.md` | This inventory |
-| `TASKS.md` | Milestone plan |
-
 ### Backend — parser (Milestone 1)
 
-| Path | Role |
-|------|------|
-| `backend/app/services/parser/` | Framework-independent deterministic parser |
-| `backend/tests/fixtures/` | PDF fixtures |
-| Parser tests | Still independently runnable |
+Unchanged and independently testable under `backend/app/services/parser/`.
 
 ### Backend — FastAPI (Milestone 2)
 
+Health + CORS + upload/parse flow (now persistence-aware).
+
+### Backend — persistence (Milestone 3)
+
 | Path | Role |
 |------|------|
-| `backend/app/main.py` | FastAPI app factory + CORS |
-| `backend/app/core/config.py` | Settings (CORS origins, upload size) |
-| `backend/app/api/` | Routers (`/health`, `/reports/parse`) |
-| `backend/app/models/schemas.py` | Pydantic response schemas |
-| `backend/app/services/reports.py` | Upload validation + parser orchestration |
+| `backend/app/db/` | SQLAlchemy models, session, seed |
+| `backend/app/services/patients.py` | Patient CRUD |
+| `backend/app/services/reports.py` | Validate → parse → store PDF → persist results |
+| `backend/app/services/storage.py` | Local filesystem PDF storage (object-storage swappable) |
+| `backend/alembic/` | Migration foundation (`0001_initial`) |
+| `backend/.env.example` | DATABASE_URL / storage examples |
 
-**API endpoints:**
+**ORM tables:** `patients`, `tests`, `reports`, `extracted_results`
+
+**Report statuses:** `pending`, `processing`, `parsed`, `needs_review`, `needs_ocr`, `failed`
+
+### API endpoints
 
 | Method | Path | Behavior |
 |--------|------|----------|
-| `GET` | `/health` | Liveness JSON |
-| `POST` | `/reports/parse` | Multipart PDF upload → `ParsedReport` JSON |
+| `GET` | `/health` | Liveness |
+| `POST` | `/patients` | Create patient |
+| `GET` | `/patients` | List patients |
+| `GET` | `/patients/{patient_id}` | Get patient |
+| `POST` | `/reports/parse` | Form `patient_id` + PDF file → parse + persist |
 
-**API rules in force:**
+### Still deferred
 
-- PDF validation (extension/content-type + `%PDF` magic)
-- Existing parser invoked via `parse_pdf_bytes` (values not altered)
-- Missing tests omitted from `results` (never filled with `0`)
-- CORS enabled for local Vite origins (`http://localhost:5173`, `http://127.0.0.1:5173`)
+- React frontend
+- Authentication
+- Object storage (S3/etc.) — local disk only for now
+- Timeline / trends UI
+- OCR / AI
 
-### Still empty / deferred
-
-- `frontend/` — reserved only
-- `backend/app/db/` — reserved only
-- No authentication
-- No PostgreSQL
-- No timeline UI
-- No OCR / AI
-
-## How to run
+## How to run locally
 
 From `backend/`:
 
 ```bash
 python -m pip install -r requirements.txt
-python -m pytest -q
+
+# Option A — zero-config SQLite (default DATABASE_URL)
 uvicorn app.main:app --reload --app-dir .
+
+# Option B — PostgreSQL
+# set DATABASE_URL=postgresql+psycopg://user:pass@localhost:5432/medtimeline
+alembic upgrade head
+uvicorn app.main:app --reload --app-dir .
+
+python -m pytest -q
 ```
 
-API docs (when server is running): `http://127.0.0.1:8000/docs`
+Uploaded PDFs land under `MEDTIMELINE_STORAGE_DIR` (default `./storage/reports`).
 
-## Test status
+API docs: `http://127.0.0.1:8000/docs`
 
-**Last run:** 33 passed (26 parser + 7 API), 2 dependency deprecation warnings unrelated to app logic.
+## Test strategy
+
+Tests use an **isolated temporary SQLite database per test** plus a temp storage directory. They do **not** require your production PostgreSQL instance.
+
+**Last run:** 41 passed.
 
 ## Dependencies
 
-- Runtime: `pypdf`, `fastapi`, `uvicorn`, `python-multipart`
+- Runtime: `pypdf`, `fastapi`, `uvicorn`, `python-multipart`, `sqlalchemy`, `psycopg`, `alembic`
 - Dev/test: `pytest`, `httpx`
